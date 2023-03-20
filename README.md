@@ -10,3 +10,6 @@ This packet can be sent from "get_shell.py", or by sending any ICMP packet of ty
 
 ## Reverse Shell
 The reverse shell will be sent to the IP it received the packet from at port 4444.
+
+### Credits
+Inspiration/methods of doing some things were taken from https://github.com/mrg0ne/kld-rootkit
