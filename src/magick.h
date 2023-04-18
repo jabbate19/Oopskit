@@ -1,5 +1,5 @@
 // T_NAME defines the magic string
 
 #ifndef T_NAME
-#define T_NAME "oops"
+#define T_NAME "pfctl"
 #endif
